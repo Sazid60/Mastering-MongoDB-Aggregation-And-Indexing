@@ -195,3 +195,194 @@ db.test.aggregate([
 - This will not show any document (empty array) since first stage is not passing the age to the second stage but there is work related to age and which is under implicit and condition.
 
 - For this reason we will use project at the end of all stages so that no hassle occurs.
+
+## 16-3 $addFields , $out , $merge aggregation stage
+
+```js
+db.test.aggregate([
+  // Stage-1: Filter for males
+  { $match: { gender: "Male" } },
+
+  // Stage-2: Filter for age <= 30
+  { $match: { age: { $lte: 30 } } },
+
+  // Stage-3: Project only selected fields
+  { $project: { gender: 1, age: 1, name: 1 } },
+
+  // Stage-4: Sort by age in ascending order (change 1 to -1 for descending order)
+  { $sort: { age: 1 } },
+]);
+```
+
+- The more we use stages it will take more time. I mean It Will Extend the Query Time.
+- Our Target should be like we will use less stages so that Query Time Reduces.
+
+#### $addfields Stage
+
+- As the $addFields documentation points out , The added fields only apply to the document in the context of pipeline
+- That means the original document is not modified.
+- You can add $addfields at any point in the pipeline, deriving fields from the data in the pervious stage.
+
+- If we want to add new filed with the existing field we have to use $addField. It will not modify the original document, it will just add a field in the pipeline.
+- It will be used when the situation is like add a new field to the data and give me so that i can add in new collection, we will use this. (for adding in new collection we have to use $$out stage as well)
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $match: { gender: "Male", age: { $gt: 30 } } },
+  // Stage-2
+  { $addFields: { course: "Level-2", eduTech: "Programming Hero" } },
+  // stage-3
+  { $project: { course: 1, eduTech: 1 } },
+]);
+```
+
+- It will not add to the original document it will just show adding the new data.
+
+#### #out stage
+
+- If we want to add new fields and create a new collection with the added fields we have to use $out stage
+- This is an unusual type of stage because it allows you to carry the results of your aggregation over into a new collection, or into an existing one after dropping it, or even adding them to the existing documents.
+- The $out stage must be the last stage in the pipeline.
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $match: { gender: "Male", age: { $gt: 30 } } },
+  // Stage-2
+  {
+    $addFields: {
+      course: "Level-2",
+      eduTech: "Programming Hero",
+      monerMoto: "Moner Iccha",
+    },
+  },
+  // stage-3
+  //   { $project: { course: 1, eduTech: 1 } },
+
+  // stage-4
+
+  { $out: "Course-Students" },
+]);
+```
+
+#### $merge stage
+
+- If we want to add new fields and merge with the existing collection we have to use $merge
+- It Will Not Create New Collection but It will add the mentioned data in the existing collection i mean it will marge stage
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $match: { gender: "Male", age: { $gt: 30 } } },
+  // Stage-2
+  {
+    $addFields: {
+      course: "Level-2",
+      eduTech: "Programming Hero",
+      monerMoto: "Moner Iccha",
+    },
+  },
+  // stage-3
+  { $merge: "test" },
+]);
+```
+
+## 16-3 $group , $sum , $push aggregation stage
+
+#### $group stage
+
+- With the $group stage, we can perform all the aggregation or summary queries that we need, such as finding counts, totals, averages or maximums.
+- Divides into multiple bases doing grouping.
+- It is responsible for grouping and summarizing documents. It takes multiple documents and arranges them into several separate batches based on grouping.
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $group: { _id: "$gender" } },
+
+  // stage-2
+]);
+```
+
+- \_id in $group is required and determines how documents are grouped. It can be any field, a computed value, or even null (to group all documents together).
+
+- Before gender, the $ is used to refer to a field in the document. So, $gender means "take the value of the gender field" from each document. In the $group stage, _id: "$gender" means we are grouping documents by the value of the gender field — it's used as the grouping key.
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $group: { _id: "$address.country" } },
+
+  // stage-2
+]);
+```
+
+| **Operator** | **Meaning**                                                         |
+| ------------ | ------------------------------------------------------------------- |
+| `$count`     | Calculates the quantity of documents in the given group.            |
+| `$max`       | Displays the maximum value of a document’s field in the collection. |
+| `$min`       | Displays the minimum value of a document’s field in the collection. |
+| `$avg`       | Displays the average value of a document’s field in the collection. |
+| `$sum`       | Sums up the specified values of all documents in the collection.    |
+| `$push`      | Adds extra values into the array of the resulting document.         |
+
+#### $group with $sum
+
+- If we want to count the distinct group values we have to use $sum with the $group
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $group: { _id: "$address.country", count: { $sum: 1 } } },
+]);
+```
+
+![alt text](image-1.png)
+
+- This will sum all the document under one country group
+- Here `count: { $sum: 1 } }` is `accumulator` and the name can be count, total or anything.
+
+#### $group with $push
+
+- Adds extra values into the array of the resulting document.
+
+- This will additionally add the names who are with the country groups and count the persons
+
+```js
+db.test.aggregate([
+  // stage-1
+  {
+    $group: {
+      _id: "$address.country",
+      totalPolapanInCountry: { $sum: 1 },
+      polapanErName: { $push: "$name" },
+    },
+  },
+]);
+```
+
+- The $push operator adds the value of the name field from each document into an array (polapanErName) for each group.
+
+- If we want to show all the fields we have to use `$$ROOT`
+
+```js
+db.test.aggregate([
+  // stage-1
+  {
+    $group: {
+      _id: "$address.country",
+      totalPolapanInCountry: { $sum: 1 },
+      polapanErFullDoc: { $push: "$$ROOT" },
+    },
+  },
+  //   stage-2
+  {
+    $project: {
+      "polapanErFullDoc.name": 1,
+      "polapanErFullDoc.email": 1,
+      "polapanErFullDoc.phone": 1,
+    },
+  },
+]);
+```
