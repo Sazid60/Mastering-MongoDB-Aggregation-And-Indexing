@@ -29,3 +29,47 @@ What Will You Learn From This Module?
 10. Explore compound index and text index: Delve into compound indexes, involving multiple fields, and text indexes designed for efficient text searching. Understand how these indexes enhance query efficiency.
 
 Embark on this journey to master MongoDB Aggregation and enhance your data manipulation and analysis skills within the MongoDB environment! Happy learning!
+
+## 16-0 Intro the powerful aggregation framework
+
+![alt text](<WhatsApp Image 2025-06-12 at 11.28.57_4908e22b.jpg>)
+
+- Aggregation Is The way of processing a large number of documents in a collection by means of passing them through different stages.
+- The stages make up what is known as pipeline
+- The stages in a pipeline can filter, sort, group, reshape and modify documents that passes through the pipeline
+
+#### Lets Understand with an example
+
+- Suppose You have 8 cousins. You are planning to do tour. Before the tour date suppose some have exam, some arises with financial issues and some became sick
+
+![alt text](<WhatsApp Image 2025-06-12 at 11.35.47_cc1c1f19.jpg>)
+
+- Just 3 Cousins are left. Here Big Brother will manage all tour related things. For this `Sort By Age` will be done to make the big brother the leader.
+- Suppose Before the Tour Date Another Occurrence happened like you just got 2 ticket. The problem is there is no chance to change the tour date. So we have do `limit by two` and remove the younger one.
+
+![alt text](<WhatsApp Image 2025-06-12 at 11.40.07_14880330.jpg>)
+
+- Then the two cousins are put in a `group` and calculated the budget.
+
+![alt text](<WhatsApp Image 2025-06-12 at 11.41.57_08c9d88b.jpg>)
+
+- here, sor, limit, group is done in different stages. These are called aggregation.
+
+#### Syntax Of Aggregation
+
+```js
+db.collection.aggregate([
+  // stage-1
+  {}, //---->pipeline
+  // stage-2
+  {}, //---->pipeline
+  // stage-3
+  {}, //---->pipeline
+]);
+```
+
+![alt text](<WhatsApp Image 2025-06-12 at 11.45.25_8219daa0.jpg>)
+
+- One Stage Will Pass the data to another stage.
+
+![alt text](<WhatsApp Image 2025-06-12 at 11.47.12_83e35b72.jpg>)
