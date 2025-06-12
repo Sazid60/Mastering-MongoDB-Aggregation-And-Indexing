@@ -195,3 +195,95 @@ db.test.aggregate([
 - This will not show any document (empty array) since first stage is not passing the age to the second stage but there is work related to age and which is under implicit and condition.
 
 - For this reason we will use project at the end of all stages so that no hassle occurs.
+
+## 16-3 $addFields , $out , $merge aggregation stage
+
+```js
+db.test.aggregate([
+  // Stage-1: Filter for males
+  { $match: { gender: "Male" } },
+
+  // Stage-2: Filter for age <= 30
+  { $match: { age: { $lte: 30 } } },
+
+  // Stage-3: Project only selected fields
+  { $project: { gender: 1, age: 1, name: 1 } },
+
+  // Stage-4: Sort by age in ascending order (change 1 to -1 for descending order)
+  { $sort: { age: 1 } },
+]);
+```
+
+- The more we use stages it will take more time. I mean It Will Extend the Query Time.
+- Our Target should be like we will use less stages so that Query Time Reduces.
+
+#### $addfields Stage
+
+- As the $addFields documentation points out , The added fields only apply to the document in the context of pipeline
+- That means the original document is not modified.
+- You can add $addfields at any point in the pipeline, deriving fields from the data in the pervious stage.
+
+- If we want to add new filed with the existing field we have to use $addField. It will not modify the original document, it will just add a field in the pipeline.
+- It will be used when the situation is like add a new field to the data and give me so that i can add in new collection, we will use this. (for adding in new collection we have to use $$out stage as well)
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $match: { gender: "Male", age: { $gt: 30 } } },
+  // Stage-2
+  { $addFields: { course: "Level-2", eduTech: "Programming Hero" } },
+  // stage-3
+  { $project: { course: 1, eduTech: 1 } },
+]);
+```
+
+- It will not add to the original document it will just show adding the new data.
+
+#### #out stage
+
+- If we want to add new fields and create a new collection with the added fields we have to use $out stage
+- This is an unusual type of stage because it allows you to carry the results of your aggregation over into a new collection, or into an existing one after dropping it, or even adding them to the existing documents.
+- The $out stage must be the last stage in the pipeline.
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $match: { gender: "Male", age: { $gt: 30 } } },
+  // Stage-2
+  {
+    $addFields: {
+      course: "Level-2",
+      eduTech: "Programming Hero",
+      monerMoto: "Moner Iccha",
+    },
+  },
+  // stage-3
+  //   { $project: { course: 1, eduTech: 1 } },
+
+  // stage-4
+
+  { $out: "Course-Students" },
+]);
+```
+
+#### $merge stage
+
+- If we want to add new fields and merge with the existing collection we have to use $merge
+- It Will Not Create New Collection but It will add the mentioned data in the existing collection i mean it will marge stage
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $match: { gender: "Male", age: { $gt: 30 } } },
+  // Stage-2
+  {
+    $addFields: {
+      course: "Level-2",
+      eduTech: "Programming Hero",
+      monerMoto: "Moner Iccha",
+    },
+  },
+  // stage-3
+  { $merge: "test" },
+]);
+```
