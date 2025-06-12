@@ -287,3 +287,102 @@ db.test.aggregate([
   { $merge: "test" },
 ]);
 ```
+
+## 16-3 $group , $sum , $push aggregation stage
+
+#### $group stage
+
+- With the $group stage, we can perform all the aggregation or summary queries that we need, such as finding counts, totals, averages or maximums.
+- Divides into multiple bases doing grouping.
+- It is responsible for grouping and summarizing documents. It takes multiple documents and arranges them into several separate batches based on grouping.
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $group: { _id: "$gender" } },
+
+  // stage-2
+]);
+```
+
+- \_id in $group is required and determines how documents are grouped. It can be any field, a computed value, or even null (to group all documents together).
+
+- Before gender, the $ is used to refer to a field in the document. So, $gender means "take the value of the gender field" from each document. In the $group stage, _id: "$gender" means we are grouping documents by the value of the gender field — it's used as the grouping key.
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $group: { _id: "$address.country" } },
+
+  // stage-2
+]);
+```
+
+| **Operator** | **Meaning**                                                         |
+| ------------ | ------------------------------------------------------------------- |
+| `$count`     | Calculates the quantity of documents in the given group.            |
+| `$max`       | Displays the maximum value of a document’s field in the collection. |
+| `$min`       | Displays the minimum value of a document’s field in the collection. |
+| `$avg`       | Displays the average value of a document’s field in the collection. |
+| `$sum`       | Sums up the specified values of all documents in the collection.    |
+| `$push`      | Adds extra values into the array of the resulting document.         |
+
+#### $group with $sum
+
+- If we want to count the distinct group values we have to use $sum with the $group
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $group: { _id: "$address.country", count: { $sum: 1 } } },
+]);
+```
+
+![alt text](image-1.png)
+
+- This will sum all the document under one country group
+- Here `count: { $sum: 1 } }` is `accumulator` and the name can be count, total or anything.
+
+#### $group with $push
+
+- Adds extra values into the array of the resulting document.
+
+- This will additionally add the names who are with the country groups and count the persons
+
+```js
+db.test.aggregate([
+  // stage-1
+  {
+    $group: {
+      _id: "$address.country",
+      totalPolapanInCountry: { $sum: 1 },
+      polapanErName: { $push: "$name" },
+    },
+  },
+]);
+```
+
+- The $push operator adds the value of the name field from each document into an array (polapanErName) for each group.
+
+- If we want to show all the fields we have to use `$$ROOT`
+
+```js
+db.test.aggregate([
+  // stage-1
+  {
+    $group: {
+      _id: "$address.country",
+      totalPolapanInCountry: { $sum: 1 },
+      polapanErFullDoc: { $push: "$$ROOT" },
+    },
+  },
+  //   stage-2
+  {
+    $project: {
+      "polapanErFullDoc.name": 1,
+      "polapanErFullDoc.email": 1,
+      "polapanErFullDoc.phone": 1,
+    },
+  },
+]);
+```
