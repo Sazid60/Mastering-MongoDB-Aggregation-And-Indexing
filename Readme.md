@@ -472,3 +472,57 @@ db.test.aggregate([
   },
 ]);
 ```
+
+## 16-5 Explore $group with $unwind aggregation stage
+
+#### $unwind with $group
+
+- There are some problems with group
+- Group can be done in single value
+- We may have array and array of object this causes problem with $group
+- This considers array as a distinct value, since we can not work directly on the element of an array within an array within a document with the stages such as $group.
+- $unwind stage enables us to work with the value of the fields within an array
+- Where there is an array field within the input document, you will sometimes need to output the document several times once for every element of that array.
+
+##### why to use $unwind?
+
+- You can not work directly on the elements of the array within a documents with stages like $group.
+- $unwind stage enables us to work with the values of the fields with the array
+- $unwind takes the array and and goes through each and every element of the array and makes individual groups.
+
+![alt text](<WhatsApp Image 2025-06-13 at 12.22.08_d8be8b27.jpg>)
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $unwind: "$friends" },
+  // stage-2
+  { $group: { _id: "$friends", count: { $sum: 1 } } },
+]);
+```
+
+- It counts how many times each individual friend appears in the friends array across all documents in the test collection.
+
+- This breaks down each array element into its own document.
+
+- After unwinding, each friend in the friends array becomes a separate document.
+
+- Groups all documents by the value of friends.
+
+- Uses $sum: 1 to count how many times each friend appears.
+
+#### Lets see another example of $unwind
+
+- Suppose we have a situation like we have to group based on the age and then we have to figure out each groups Interests from the interests array.
+
+```js
+db.test.aggregate([
+  // stage-1
+  { $unwind: "$interests" },
+
+  // stage-2
+  {
+    $group: { _id: "$age", interestsPerAge: { $push: "$interests" } },
+  },
+]);
+```
