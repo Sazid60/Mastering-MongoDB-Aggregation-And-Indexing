@@ -386,3 +386,89 @@ db.test.aggregate([
   },
 ]);
 ```
+
+## 16-4 explore more about $group & $project
+
+- Suppose we want to make the entire data set as group. we have to use `_id:null`. This makes entire collection a group and helps to do accumulator operations like `$sum, $avg, $min,$max,$count etc` in entire collection.
+
+```js
+db.test.aggregate([
+  // stage-1
+  {
+    $group: {
+      _id: null,
+      totalSalary: { $sum: "$salary" },
+      maxSalary: { $max: "$salary" },
+      minSalary: { $min: "$salary" },
+      avgSalary: { $avg: "$salary" },
+    },
+  },
+]);
+```
+
+#### Renaming Inside `$project`
+
+```js
+db.test.aggregate([
+  // stage-1
+  {
+    $group: {
+      _id: null,
+      totalSalary: { $sum: "$salary" },
+      maxSalary: { $max: "$salary" },
+      minSalary: { $min: "$salary" },
+      avgSalary: { $avg: "$salary" },
+    },
+  },
+
+  // stage-2
+
+  {
+    $project: {
+      totalSalary: 1,
+      maxSalary: 1,
+      minSalary: 1,
+      averageSalary: "$avgSalary",
+    },
+  },
+]);
+```
+
+- here we have changed the avgSalary to averageSalary
+
+#### Calculation inside `$project` using `$subtract`
+
+- Structure
+
+```
+{ $subtract: [ <expression1>, <expression2> ] }
+```
+
+- Suppose we want to see the gap between(difference) the maximum and minimum salary
+
+```js
+db.test.aggregate([
+  // stage-1
+  {
+    $group: {
+      _id: null,
+      totalSalary: { $sum: "$salary" },
+      maxSalary: { $max: "$salary" },
+      minSalary: { $min: "$salary" },
+      avgSalary: { $avg: "$salary" },
+    },
+  },
+
+  // stage-2
+
+  {
+    $project: {
+      totalSalary: 1,
+      maxSalary: 1,
+      minSalary: 1,
+      averageSalary: "$avgSalary",
+      rangeBetweenMaxAndMin: { $subtract: ["$maxSalary", "$minSalary"] },
+    },
+  },
+]);
+```
