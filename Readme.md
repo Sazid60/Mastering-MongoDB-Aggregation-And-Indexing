@@ -741,3 +741,72 @@ db.test.find({ email: "omirfin2@i2i.jp" }).explain("executionStats");
 ```js
 db.getCollection("massive-data").createIndex({ email: 1 });
 ```
+
+## 16-10 Explore compound index and text index
+
+#### Delete a Indexing
+
+```js
+db.getCollection("massive-data").dropIndex({ email: 1 });
+```
+
+#### Lets Understand Compound Indexing
+
+- when we try to mach a document based on two different field we need compound indexing.
+
+```js
+{gender:"Male", age:21}
+```
+
+- If do this query it will show us that COLSCAN Is happening here.
+
+![alt text](image-6.png)
+
+- Here Order Matters. When we sort data we have do sorting of one field then another.
+- mongodb Behind the scene it uses balanced tree.
+
+[Balanced Tree](https://www.cs.usfca.edu/~galles/visualization/BTree.html)
+
+![alt text](image-7.png)
+
+![alt text](image-8.png)
+
+- we can use command line to create as well
+
+```js
+db.getCollection("massive-data").createIndex({ gender: -1, age: 1 });
+```
+
+- here gender indexed ascending order taking into concern that Male is searched more than female. so Male will come first while searching.
+
+#### Search Index
+
+- This facilitates us to flexible the searching based n the text of any field. Its like it will not require to write full word to find anything.
+
+- Creating a search index
+
+```js
+db.getCollection("massive-data").createIndex({ about: "text" });
+```
+
+![alt text](image-9.png)
+
+Example for searching a text
+
+```js
+db.getCollection("massive-data")
+  .find({ $text: { $search: "dolor" } })
+  .project({ about: 1 });
+```
+
+- Which Filed Requires More Searching we will do Search Indexing.
+
+## Practice Task
+
+Practice Data: https://raw.githubusercontent.com/Apollo-Level2-Web-Dev/mongodb-practice/main/massive-data.json
+
+Task Link: https://drive.google.com/file/d/14Bl2h_ctiAmVB-9Xvb0Z9DAuELfDhXv0/view?usp=drive_link
+
+Solution: https://github.com/Apollo-Level2-Web-Dev/practice-tasks-2-solutions
+
+![alt text](image-10.png)
