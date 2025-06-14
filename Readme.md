@@ -635,3 +635,109 @@ db.test.aggregate([
   },
 ]);
 ```
+
+## 16-8 $lookup stage, embedding vs referencing
+
+![alt text](<WhatsApp Image 2025-06-14 at 10.36.33_ed85c3a1.jpg>)
+
+- Suppose I am a user and now i will order a product from a website
+
+![alt text](<WhatsApp Image 2025-06-14 at 10.37.29_aed7a089.jpg>)
+
+- Product data will be embedded inside the user data.
+
+**This is not appropriate option to do because ife the product purchase increases the embedding filed will increase and the data will become heavier. And this will increase the query time.**
+
+- The appropriate way to do is referencing. Like creating a different field and then refer the two fields.
+
+![alt text](<WhatsApp Image 2025-06-14 at 10.42.51_a6dab0ef.jpg>)
+
+#### when To use referencing and embedding
+
+![alt text](image-3.png)
+
+| **Aspect**            | **Embedded**                | **Referencing**                            |
+| --------------------- | --------------------------- | ------------------------------------------ |
+| **Relationship Type** | One-to-one relationship     | One-to-many or many-to-many relationships  |
+| **Best For**          | Frequently reading data     | Frequently writing or updating data        |
+| **Updates**           | Atomic updates              | May require multiple updates               |
+| **Network Overhead**  | Reduces network overhead    | Higher network overhead for large datasets |
+| **Data Size**         | Suitable for small datasets | Scalable for large datasets                |
+| **Flexibility**       | Less flexible               | Highly flexible                            |
+
+#### Use Case Examples
+
+##### Embedded Example:
+
+- Embedding is ideal when you need to store a small, self-contained dataset, such as a user's profile information directly inside a parent document.
+
+##### Referencing Example:
+
+- Referencing works best for relational data, like associating a product with multiple categories or linking users to their orders.
+
+#### What is $Lookup?
+
+- In MongoDB, $lookup is an aggregation pipeline stage used to perform joins between collections. It allows you to combine data from two collections, similar to SQL joins, by matching a field from one collection with a field from another. Its like it will look for the referenced data in another collection and provide us the data by merging with our data.
+
+- structure
+
+```js
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "<collection to join>", // this means where/ which collection we will search i will find the data
+      localField: "<field from the input documents>",
+      foreignField: "<field from the documents of the from collection>",
+      as: "<output array field>",
+    },
+  },
+]);
+```
+
+#### Example
+
+```js
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "test",
+      localField: "userId",
+      foreignField: "_id",
+      as: "UserInformation",
+    },
+  },
+]);
+```
+
+## 16-9 What is indexing, COLLSCAN vs IXSCAN
+
+- Lets guess you have my name in a book. If you want to find in by going through line by line it is called COLLSCAN.
+- COLSCAN Consumes some time to find a data. this is a problem
+- If you create an index to find it more faster its called IXSCAN. Indexing means you have a content indexes and you can go directly to the desired page. When indexing is done the indexes will bge in sorted manner(asc or desc).
+- When we do search a data it will search in the index and through the index searching is placed where the actual data exists. we do not need to go page by page or line by line. and query time reduces.
+- To observe which type is used we can directly make query in mongodb compass or in noSqlBooster.
+- Maximum Time we will search by id since it will use mongodb default indexing which will require less time
+
+```js
+db.test
+  .find({ _id: ObjectId("6406ad63fc13ae5a40000067") })
+  .explain("executionStats");
+```
+
+![alt text](image-4.png)
+
+```js
+db.test.find({ email: "omirfin2@i2i.jp" }).explain("executionStats");
+```
+
+![alt text](image-5.png)
+
+- for massive data we should create indexing. Though we should not create much since more we make indexing more it takes memory
+- We can create index in mongodb Compass as well we can do it by coding
+- Indexing can be created in ascending or descending order. helps in sorting data
+
+#### Ascending order index creating
+
+```js
+db.getCollection("massive-data").createIndex({ email: 1 });
+```
